@@ -49,7 +49,7 @@ image: templates
 	docker build --tag=$(REGISTRY)/apm/apm-server:$(VERSION_TAG) build/apm-server
 
 release-manager-snapshot: templates
-	DOWNLOAD_URL_ROOT=http://localhost:8000/build/release-artifacts/apm-server/build/upload make templates
+	DOWNLOAD_URL_ROOT=http://localhost:8000/build/snapshot-artifacts/apm-server/build/upload make templates
 	docker build --network=host --tag=$(REGISTRY)/apm/apm-server:$(VERSION_TAG) build/apm-server
 
 release-manager-release: templates
