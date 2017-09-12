@@ -1,0 +1,37 @@
+# This Dockerfile was generated from templates/Dockerfile.j2
+{% set home = '/usr/share/apm-server' -%}
+{% set binary_file = '%s/%s' % (home, 'apm-server') -%}
+
+FROM centos:7
+MAINTAINER Elastic Docker Team <docker@elastic.co>
+
+RUN yum update -y && yum install -y curl && yum clean all
+
+RUN curl -Lso - {{ url }} | \
+      tar zxf - -C /tmp && \
+      mv /tmp/apm-server-{{ version }}-linux-x86_64 {{ home }}
+
+ENV ELASTIC_CONTAINER true
+ENV PATH={{ home }}:$PATH
+
+COPY config {{ home }}
+
+# Add entrypoint wrapper script
+ADD docker-entrypoint /usr/local/bin
+
+# Provide a non-root user.
+RUN groupadd --gid 1000 apm-server && \
+    useradd -M --uid 1000 --gid 1000 --home {{ home }} apm-server
+
+WORKDIR {{ home }}
+RUN mkdir data logs && \
+    chown -R root:apm-server . && \
+    find {{ home }} -type d -exec chmod 0750 {} \; && \
+    find {{ home }} -type f -exec chmod 0640 {} \; && \
+    chmod 0750 {{ binary_file }} && \
+    chmod 0770 data logs
+
+USER apm-server
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
+CMD ["-e"]
