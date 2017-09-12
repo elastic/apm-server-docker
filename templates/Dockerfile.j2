@@ -33,5 +33,7 @@ RUN mkdir data logs && \
 
 USER apm-server
 
+EXPOSE 8200
+
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
 CMD ["-e"]
