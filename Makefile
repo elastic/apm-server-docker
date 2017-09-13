@@ -1,16 +1,18 @@
-SHELL=/bin/bash
+SHELL := /bin/bash
 
 export ELASTIC_VERSION := $(shell ./bin/elastic-version)
 
 ifdef STAGING_BUILD_NUM
-export VERSION_TAG := $(ELASTIC_VERSION)-$(STAGING_BUILD_NUM)
-DOWNLOAD_URL_ROOT ?= https://staging.elastic.co/$(VERSION_TAG)/downloads/apm-server
+  export VERSION_TAG := $(ELASTIC_VERSION)-$(STAGING_BUILD_NUM)
+  DOWNLOAD_URL_ROOT ?= https://staging.elastic.co/$(VERSION_TAG)/downloads/apm-server
 else
-export VERSION_TAG := $(ELASTIC_VERSION)
-DOWNLOAD_URL_ROOT ?= https://artifacts.elastic.co/downloads/apm-server
+  export VERSION_TAG := $(ELASTIC_VERSION)
+  DOWNLOAD_URL_ROOT ?= https://artifacts.elastic.co/downloads/apm-server
 endif
 
 REGISTRY ?= docker.elastic.co
+IMAGE ?= $(REGISTRY)/apm/apm-server:$(VERSION_TAG)
+HTTPD ?= apm-server-docker-artifact-server
 
 # Make sure we run local versions of everything, particularly commands
 # installed into our virtualenv with pip eg. `docker-compose`.
@@ -46,17 +48,31 @@ templates: venv
 .PHONY: templates
 
 image: templates
-	docker build --tag=$(REGISTRY)/apm/apm-server:$(VERSION_TAG) build/apm-server
+	docker build --tag=$(IMAGE) build/apm-server
 
-release-manager-snapshot: templates
-	DOWNLOAD_URL_ROOT=http://localhost:8000/build/snapshot-artifacts/apm-server/build/upload make templates
-	docker build --network=host --tag=$(REGISTRY)/apm/apm-server:$(VERSION_TAG) build/apm-server
+build-from-local-artifacts: templates
+	docker run --rm -d --name=$(HTTPD) --network=host \
+	-v $(ARTIFACTS_DIR):/mnt \
+	  python:3 bash -c 'cd /mnt && python3 -m http.server'
+	timeout 120 bash -c 'until curl -s localhost:8000 > /dev/null; do sleep 1; done'
 
-release-manager-release: templates
-	DOWNLOAD_URL_ROOT=http://localhost:8000/build/release-artifacts/apm-server/build/upload make templates
-	docker build --network=host --tag=$(REGISTRY)/apm/apm-server:$(VERSION_TAG) build/apm-server
+	docker build --network=host -t $(IMAGE) build/apm-server || \
+	  (docker kill $(HTTPD); false)
+	-docker kill $(HTTPD)
 
-# Push the images to the dedicated push endpoint at "push.docker.elastic.co"
+release-manager-snapshot:
+	ELASTIC_VERSION=$(ELASTIC_VERSION)-SNAPSHOT \
+	  DOWNLOAD_URL_ROOT=http://localhost:8000/apm-server/build/upload \
+	  IMAGE=$(IMAGE)-SNAPSHOT \
+	  make build-from-local-artifacts
+
+release-manager-release:
+	ELASTIC_VERSION=$(ELASTIC_VERSION) \
+	  DOWNLOAD_URL_ROOT=http://localhost:8000/apm-server/build/upload \
+	  IMAGE=$(IMAGE) \
+	  make build-from-local-artifacts
+
+# Push the image to the dedicated push endpoint at "push.docker.elastic.co"
 push: all
 	docker tag $(REGISTRY)/apm/apm-server:$(VERSION_TAG) push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 	docker push push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
