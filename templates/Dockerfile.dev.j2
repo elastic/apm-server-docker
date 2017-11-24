@@ -1,0 +1,43 @@
+# This Dockerfile was generated from templates/Dockerfile.dev.j2
+{% set home = '/usr/share/apm-server' -%}
+{% set binary_file = '%s/%s' % (home, 'apm-server') -%}
+
+FROM golang:1.9.2
+MAINTAINER Elastic Docker Team <docker@elastic.co>
+
+
+ENV APM_SERVER_PATH /go/src/github.com/elastic/apm-server
+RUN mkdir -p $APM_SERVER_PATH
+
+RUN git clone https://github.com/elastic/apm-server $APM_SERVER_PATH
+WORKDIR $APM_SERVER_PATH
+RUN make
+RUN mv $APM_SERVER_PATH {{ home }}
+
+ENV ELASTIC_CONTAINER true
+ENV PATH={{ home }}:$PATH
+
+COPY config {{ home }}
+
+# Add entrypoint wrapper script
+ADD docker-entrypoint /usr/local/bin
+
+# Provide a non-root user.
+RUN groupadd --gid 1000 apm-server && \
+    useradd -M --uid 1000 --gid 1000 --home {{ home }} apm-server
+
+WORKDIR {{ home }}
+
+RUN mkdir data logs && \
+    chown -R root:apm-server . && \
+    find {{ home }} -type d -exec chmod 0750 {} \; && \
+    find {{ home }} -type f -exec chmod 0640 {} \; && \
+    chmod 0750 {{ binary_file }} && \
+    chmod 0770 data logs
+
+USER apm-server
+
+EXPOSE 8200
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
+CMD ["-e"]

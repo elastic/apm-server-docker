@@ -50,6 +50,11 @@ templates: venv
 image: templates
 	docker build --tag=$(IMAGE) build/apm-server
 
+# Clones elastic/apm-server and builds from master
+image-dev: templates
+	jinja2 templates/Dockerfile.dev.j2 > build/apm-server/Dockerfile
+	docker build --tag=apm-server:dev build/apm-server
+
 build-from-local-artifacts: templates
 	docker run --rm -d --name=$(HTTPD) --network=host \
 	-v $(ARTIFACTS_DIR):/mnt \
