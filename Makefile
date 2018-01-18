@@ -80,7 +80,7 @@ push: all
 	docker rmi push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 
 venv: requirements.txt
-	test -d venv || virtualenv --python=python3.5 venv
+	test -d venv || python3 -mvenv venv
 	pip install -r requirements.txt
 	touch venv
 
