@@ -13,6 +13,7 @@ endif
 REGISTRY ?= docker.elastic.co
 IMAGE ?= $(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 HTTPD ?= apm-server-docker-artifact-server
+HTTPD_PORT ?= 8000
 
 # Make sure we run local versions of everything, particularly commands
 # installed into our virtualenv with pip eg. `docker-compose`.
@@ -53,8 +54,8 @@ image: templates
 build-from-local-artifacts: templates
 	docker run --rm -d --name=$(HTTPD) --network=host \
 	-v $(ARTIFACTS_DIR):/mnt \
-	  python:3 bash -c 'cd /mnt && python3 -m http.server'
-	timeout 120 bash -c 'until curl -s localhost:8000 > /dev/null; do sleep 1; done'
+	  python:3 bash -c 'cd /mnt && python3 -m http.server $(HTTPD_PORT)'
+	timeout 120 bash -c 'until curl -s localhost:$(HTTPD_PORT) > /dev/null; do sleep 1; done'
 
 	docker build --network=host -t $(IMAGE) build/apm-server || \
 	  (docker kill $(HTTPD); false)
@@ -62,13 +63,13 @@ build-from-local-artifacts: templates
 
 release-manager-snapshot:
 	ELASTIC_VERSION=$(ELASTIC_VERSION)-SNAPSHOT \
-	  DOWNLOAD_URL_ROOT=http://localhost:8000/apm-server/build/upload \
+	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/apm-server/build/upload \
 	  IMAGE=$(IMAGE)-SNAPSHOT \
 	  make build-from-local-artifacts
 
 release-manager-release:
 	ELASTIC_VERSION=$(ELASTIC_VERSION) \
-	  DOWNLOAD_URL_ROOT=http://localhost:8000/apm-server/build/upload \
+	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/apm-server/build/upload \
 	  IMAGE=$(IMAGE) \
 	  make build-from-local-artifacts
 
