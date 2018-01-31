@@ -7,10 +7,10 @@ This repository contains the official [APM Server][apm-server] Docker image from
 [elastic]: https://www.elastic.co/
 
 ## Requirements
-A full build and test requires:
+A full build requires:
 * Docker
 * GNU Make
-* Python 3.5 with Virtualenv
+* Python 3.3+ (3.5+ for tests)
 
 ## Supported Docker versions
 
