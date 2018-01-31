@@ -13,6 +13,8 @@ endif
 REGISTRY ?= docker.elastic.co
 IMAGE ?= $(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 HTTPD ?= apm-server-docker-artifact-server
+HTTPD_PORT ?= 8000
+DOCKER_ARGS ?= --network host
 
 # Make sure we run local versions of everything, particularly commands
 # installed into our virtualenv with pip eg. `docker-compose`.
@@ -51,10 +53,10 @@ image: templates
 	docker build --tag=$(IMAGE) build/apm-server
 
 build-from-local-artifacts: templates
-	docker run --rm -d --name=$(HTTPD) --network=host \
+	docker run --rm -d --name=$(HTTPD) $(DOCKER_ARGS) \
 	-v $(ARTIFACTS_DIR):/mnt \
-	  python:3 bash -c 'cd /mnt && python3 -m http.server'
-	timeout 120 bash -c 'until curl -s localhost:8000 > /dev/null; do sleep 1; done'
+	  python:3 bash -c 'cd /mnt && python3 -m http.server $(HTTPD_PORT)'
+	timeout 120 bash -c 'until curl -s localhost:$(HTTPD_PORT) > /dev/null; do sleep 1; done'
 
 	docker build --network=host -t $(IMAGE) build/apm-server || \
 	  (docker kill $(HTTPD); false)
@@ -62,15 +64,19 @@ build-from-local-artifacts: templates
 
 release-manager-snapshot:
 	ELASTIC_VERSION=$(ELASTIC_VERSION)-SNAPSHOT \
-	  DOWNLOAD_URL_ROOT=http://localhost:8000/apm-server/build/upload \
+	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/apm-server/build/upload \
 	  IMAGE=$(IMAGE)-SNAPSHOT \
 	  make build-from-local-artifacts
 
 release-manager-release:
 	ELASTIC_VERSION=$(ELASTIC_VERSION) \
-	  DOWNLOAD_URL_ROOT=http://localhost:8000/apm-server/build/upload \
+	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/apm-server/build/upload \
 	  IMAGE=$(IMAGE) \
 	  make build-from-local-artifacts
+
+mac-release-snapshot:
+	DOCKER_ARGS="--network bridge -p $(HTTPD_PORT):$(HTTPD_PORT)" \
+	make release-manager-snapshot
 
 # Push the image to the dedicated push endpoint at "push.docker.elastic.co"
 push: all
@@ -79,7 +85,7 @@ push: all
 	docker rmi push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 
 venv: requirements.txt
-	test -d venv || virtualenv --python=python3.5 venv
+	test -d venv || python3 -mvenv venv
 	pip install -r requirements.txt
 	touch venv
 
