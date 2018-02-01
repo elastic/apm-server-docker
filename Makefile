@@ -84,10 +84,21 @@ push: all
 	docker push push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 	docker rmi push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 
+# The tests are written in Python. Make a virtualenv to handle the dependencies.
 venv: requirements.txt
-	test -d venv || python3 -mvenv venv
-	pip install -r requirements.txt
-	touch venv
+	@if [ -z $$PYTHON3 ]; then\
+	    PY3_MINOR_VER=`python3 --version 2>&1 | cut -d " " -f 2 | cut -d "." -f 2`;\
+	    if (( $$PY3_MINOR_VER < 5 )); then\
+	        echo "WARNING! Tests require python3 in \$PATH that is >=3.5";\
+	        echo "Please install python3.5 or later or explicity define the python3 executable name with \$PYTHON3";\
+	        echo "";\
+	    else\
+	        export PYTHON3="python3.$$PY3_MINOR_VER";\
+	    fi;\
+	fi;\
+	test -d venv || virtualenv --python=$$PYTHON3 venv;\
+	pip install -r requirements.txt;\
+	touch venv;\
 
 clean: venv
 	docker-compose down -v || true
