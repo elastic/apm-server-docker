@@ -14,7 +14,7 @@ RUN curl -Lso - {{ url }} | \
 ENV ELASTIC_CONTAINER true
 ENV PATH={{ home }}:$PATH
 
-COPY config {{ home }}
+RUN sed -i -e 's/hosts: \["localhost:9200"\]/hosts: ["elasticsearch:9200"]/g' {{ home }}/apm-server.yml
 
 # Add entrypoint wrapper script
 ADD docker-entrypoint /usr/local/bin
