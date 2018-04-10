@@ -1,4 +1,5 @@
 from .fixtures import apm_server
+from .helpers import run
 import os
 
 
@@ -43,3 +44,10 @@ def test_log_dir_permissions(apm_server):
     assert apm_server.log_dir.user == 'root'
     assert apm_server.log_dir.group == apm_server.name
     assert apm_server.log_dir.mode == 0o0770
+
+
+def test_suid_bit_removed(apm_server):
+    cmd = run(apm_server, "find / -xdev -perm -4000", True)
+    assert cmd.returncode == 0
+    assert not cmd.stdout
+    assert not cmd.stderr
