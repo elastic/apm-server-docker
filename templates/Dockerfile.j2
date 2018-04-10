@@ -30,6 +30,9 @@ RUN mkdir data logs && \
     chmod 0750 {{ binary_file }} && \
     chmod 0770 data logs
 
+# Remove the suid bit everywhere it is set to mitigate against stackclash
+RUN find / -xdev -perm -4000 -exec chmod u-s {} +
+
 USER apm-server
 
 EXPOSE 8200
