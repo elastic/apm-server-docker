@@ -7,7 +7,7 @@ def test_binary_file_version(Command, apm_server):
     version_string = '%s version %s (amd64), libbeat %s' \
                      % (apm_server.name, apm_server.version, apm_server.version)
     command = Command('%s --version' % apm_server.binary_file.path)
-    assert command.stdout.strip() == version_string
+    assert command.stdout.strip() == version_string.replace('-SNAPSHOT', '')
 
 
 def test_binary_file_permissions(apm_server):

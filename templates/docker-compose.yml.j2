@@ -3,28 +3,5 @@
 version: '2.1'
 services:
   apm-server:
-    image: {{ registry }}/apm/apm-server:{{ version }}
+    image: {{ registry }}/apm/apm-server-{{ image_flavor }}:{{ version }}
     container_name: apm-server
-
-    networks:
-       - apm
-
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-
-  elasticsearch:
-    image: {{ registry }}/elasticsearch/elasticsearch:{{ version }}
-    container_name: elasticsearch
-    environment:
-      - "http.host=0.0.0.0"
-      - "transport.host=127.0.0.1"
-    ports:
-      - '127.0.0.1:9200:9200'
-    networks:
-       - apm
-    healthcheck:
-      test: ['CMD', 'curl', '-f', '-u', 'elastic:changeme', 'http://localhost:9200']
-
-networks:
-  apm:

@@ -11,10 +11,12 @@ else
 endif
 
 REGISTRY ?= docker.elastic.co
-IMAGE ?= $(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 HTTPD ?= apm-server-docker-artifact-server
 HTTPD_PORT ?= 8000
 DOCKER_ARGS ?= --network host
+
+IMAGE_FLAVORS ?= oss full
+FIGLET := pyfiglet -w 160 -f puffy
 
 # Make sure we run local versions of everything, particularly commands
 # installed into our virtualenv with pip eg. `docker-compose`.
@@ -22,8 +24,11 @@ export PATH := ./bin:./venv/bin:$(PATH)
 
 all: venv image docker-compose.yml test
 
-test: lint
-	bin/pytest -v tests/
+test: templates lint
+	$(foreach FLAVOR, $(IMAGE_FLAVORS), \
+	  $(FIGLET) "test: $(FLAVOR)"; \
+	  ./bin/pytest -v --image-flavor=$(FLAVOR) tests/; \
+	)
 .PHONY: test
 
 lint: venv
@@ -36,21 +41,32 @@ templates: venv
 	jinja2 \
 	  -D version=$(ELASTIC_VERSION) \
 	  -D url=$(DOWNLOAD_URL_ROOT)/apm-server-$(ELASTIC_VERSION)-linux-x86_64.tar.gz \
-          templates/Dockerfile.j2 > build/apm-server/Dockerfile
+	  templates/Dockerfile.j2 > build/apm-server/Dockerfile-full
+
+	jinja2 \
+	  -D version=$(ELASTIC_VERSION) \
+	  -D url=$(DOWNLOAD_URL_ROOT)/apm-server-oss-$(ELASTIC_VERSION)-linux-x86_64.tar.gz \
+	  templates/Dockerfile.j2 > build/apm-server/Dockerfile-oss
 
 	jinja2 \
 	  -D version=$(ELASTIC_VERSION) \
 	  templates/docker-entrypoint.j2 > build/apm-server/docker-entrypoint
 	chmod +x build/apm-server/docker-entrypoint
 
-	jinja2 \
-	  -D version=$(VERSION_TAG) \
-	  -D registry=$(REGISTRY) \
-	  templates/docker-compose.yml.j2 > docker-compose.yml
+	$(foreach FLAVOR, $(IMAGE_FLAVORS), \
+	  jinja2 \
+	    -D version=$(VERSION_TAG) \
+	    -D registry=$(REGISTRY) \
+	    -D image_flavor=$(FLAVOR) \
+	    templates/docker-compose.yml.j2 > docker-compose-$(FLAVOR).yml; \
+	  )
 .PHONY: templates
 
 image: templates
-	docker build --tag=$(IMAGE) build/apm-server
+	$(foreach FLAVOR, $(IMAGE_FLAVORS), \
+	  docker build $(DOCKER_FLAGS) -f build/apm-server/Dockerfile-$(FLAVOR) --tag=$(REGISTRY)/apm/apm-server-$(FLAVOR):$(VERSION_TAG) build/apm-server; \
+	)
+	docker tag $(REGISTRY)/apm/apm-server-full:$(VERSION_TAG) $(REGISTRY)/apm/apm-server:$(VERSION_TAG)
 
 build-from-local-artifacts: templates
 	docker run --rm -d --name=$(HTTPD) $(DOCKER_ARGS) \
@@ -58,7 +74,7 @@ build-from-local-artifacts: templates
 	  python:3 bash -c 'cd /mnt && python3 -m http.server $(HTTPD_PORT)'
 	timeout 120 bash -c 'until curl -s localhost:$(HTTPD_PORT) > /dev/null; do sleep 1; done'
 
-	docker build --network=host -t $(IMAGE) build/apm-server || \
+	DOCKER_FLAGS='--network=host' make image || \
 	  (docker kill $(HTTPD); false)
 	-docker kill $(HTTPD)
 

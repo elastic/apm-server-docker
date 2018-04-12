@@ -29,4 +29,4 @@ def test_entrypoint_with_abitrary_command(apm_server):
 def test_entrypoint_with_explicit_apm_server_binary(apm_server):
     cmd = run(apm_server, '%s --version' % apm_server.name)
     assert cmd.returncode == 0
-    assert apm_server.version in cmd.stdout.decode()
+    assert apm_server.version.replace('-SNAPSHOT', '') in cmd.stdout.decode()
