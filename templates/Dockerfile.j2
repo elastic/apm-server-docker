@@ -10,7 +10,7 @@ RUN yum update -y && yum install -y curl && yum clean all
 RUN curl -Lso - {{ url }} | \
       tar zxf - -C /tmp && \
       mv /tmp/apm-server-{{ version }}-linux-x86_64 {{ home }} && \
-      sed -zri 's/output.elasticsearch:(\n[^\n]*){2}/output.elasticsearch:\n  hosts: ["elasticsearch:9200"]/' {{ home }}/apm-server.yml
+      sed -zri -e 's/output.elasticsearch:(\n[^\n]*){2}/output.elasticsearch:\n  hosts: ["elasticsearch:9200"]/' -e 's/  host: "localhost:8200"/  host: "0.0.0.0:8200"/' {{ home }}/apm-server.yml
 
 ENV ELASTIC_CONTAINER true
 ENV PATH={{ home }}:$PATH
