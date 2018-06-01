@@ -22,7 +22,7 @@ FIGLET := pyfiglet -w 160 -f puffy
 # installed into our virtualenv with pip eg. `docker-compose`.
 export PATH := ./bin:./venv/bin:$(PATH)
 
-all: venv image docker-compose.yml test
+all: venv image test
 
 test: templates lint
 	$(foreach FLAVOR, $(IMAGE_FLAVORS), \
