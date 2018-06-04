@@ -16,6 +16,20 @@ A full build requires:
 
 The images have been tested on Docker 17.03.1-ce
 
+## Running a build
+To build an image with the latest nightly snapshot of APM Server, run:
+```
+make from-snapshot
+```
+
+To build an image with a released version of APM Server, check out the corresponding
+branch for the version and run Make while specifying the exact version desired.
+Like this:
+```
+git checkout 6.2
+ELASTIC_VERSION=6.2.4 make
+```
+
 ## Contributing, issues and testing
 
 Acceptance tests for the image are located in the `test` directory,
