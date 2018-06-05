@@ -94,6 +94,15 @@ mac-release-snapshot:
 	DOCKER_ARGS="--network bridge -p $(HTTPD_PORT):$(HTTPD_PORT)" \
 	make release-manager-snapshot
 
+from-snapshot:
+	rm -rf ./snapshots
+	mkdir -p snapshots/apm-server/build/upload/$$beat; \
+	(cd snapshots/apm-server/build/upload/$$beat && \
+	wget https://snapshots.elastic.co/downloads/apm-server/apm-server-$(ELASTIC_VERSION)-SNAPSHOT-linux-x86_64.tar.gz && \
+	wget https://snapshots.elastic.co/downloads/apm-server/apm-server-oss-$(ELASTIC_VERSION)-SNAPSHOT-linux-x86_64.tar.gz); \
+	ARTIFACTS_DIR=$$PWD/snapshots make release-manager-snapshot
+
+
 # Push the image to the dedicated push endpoint at "push.docker.elastic.co"
 push: all
 	docker tag $(REGISTRY)/apm/apm-server:$(VERSION_TAG) push.$(REGISTRY)/apm/apm-server:$(VERSION_TAG)
