@@ -5,3 +5,5 @@ build/*/docker-entrypoint
 docker-compose.yml
 .cache
 **/__pycache__
+.pytest_cache
+snapshots
