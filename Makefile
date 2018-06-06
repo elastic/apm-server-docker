@@ -39,17 +39,19 @@ templates: venv
 	mkdir -p build/apm-server/config
 	touch build/apm-server/config/apm-server.yml
 	jinja2 \
-	  -D version=$(ELASTIC_VERSION) \
+	  -D elastic_version=$(ELASTIC_VERSION) \
 	  -D url=$(DOWNLOAD_URL_ROOT)/apm-server-$(ELASTIC_VERSION)-linux-x86_64.tar.gz \
+	  -D image_flavor=full \
 	  templates/Dockerfile.j2 > build/apm-server/Dockerfile-full
 
 	jinja2 \
-	  -D version=$(ELASTIC_VERSION) \
+	  -D elastic_version=$(ELASTIC_VERSION) \
 	  -D url=$(DOWNLOAD_URL_ROOT)/apm-server-oss-$(ELASTIC_VERSION)-linux-x86_64.tar.gz \
+	  -D image_flavor=oss \
 	  templates/Dockerfile.j2 > build/apm-server/Dockerfile-oss
 
 	jinja2 \
-	  -D version=$(ELASTIC_VERSION) \
+	  -D elastic_version=$(ELASTIC_VERSION) \
 	  templates/docker-entrypoint.j2 > build/apm-server/docker-entrypoint
 	chmod +x build/apm-server/docker-entrypoint
 
