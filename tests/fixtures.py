@@ -42,6 +42,6 @@ def apm_server(Process, File, TestinfraBackend, Command):
                 self.image = 'docker.elastic.co/apm/%s:%s' % (self.name, self.tag)
 
             self.docker_metadata = json.loads(
-                run(['docker', 'inspect', self.image], stdout=PIPE).stdout)[0]
+                run(['docker', 'inspect', self.image], stdout=PIPE).stdout.decode())[0]
 
     return ApmServer()
