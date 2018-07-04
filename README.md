@@ -3,7 +3,7 @@
 This repository contains the official [APM Server][apm-server] Docker image from
 [Elastic][elastic].
 
-[apm-server]: https://www.elastic.co/guide/en/apm/server/current/_apm_server.html
+[apm-server]: https://www.elastic.co/guide/en/apm/server/current/index.html
 [elastic]: https://www.elastic.co/
 
 ## Requirements
