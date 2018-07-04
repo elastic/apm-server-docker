@@ -18,6 +18,8 @@ DOCKER_ARGS ?= --network host
 IMAGE_FLAVORS ?= oss full
 FIGLET := pyfiglet -w 160 -f puffy
 
+BUILD_ARTIFACT_PATH ?= apm-server/build/distributions
+
 # Make sure we run local versions of everything, particularly commands
 # installed into our virtualenv with pip eg. `docker-compose`.
 export PATH := ./bin:./venv/bin:$(PATH)
@@ -82,13 +84,13 @@ build-from-local-artifacts: templates
 
 release-manager-snapshot:
 	ELASTIC_VERSION=$(ELASTIC_VERSION)-SNAPSHOT \
-	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/apm-server/build/upload \
+	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/$(BUILD_ARTIFACT_PATH) \
 	  IMAGE=$(IMAGE)-SNAPSHOT \
 	  make build-from-local-artifacts
 
 release-manager-release:
 	ELASTIC_VERSION=$(ELASTIC_VERSION) \
-	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/apm-server/build/upload \
+	  DOWNLOAD_URL_ROOT=http://localhost:$(HTTPD_PORT)/$(BUILD_ARTIFACT_PATH) \
 	  IMAGE=$(IMAGE) \
 	  make build-from-local-artifacts
 
@@ -98,8 +100,8 @@ mac-release-snapshot:
 
 from-snapshot:
 	rm -rf ./snapshots
-	mkdir -p snapshots/apm-server/build/upload/$$beat; \
-	(cd snapshots/apm-server/build/upload/$$beat && \
+	mkdir -p snapshots/$(BUILD_ARTIFACT_PATH)/$$beat; \
+	(cd snapshots/$(BUILD_ARTIFACT_PATH)/$$beat && \
 	wget https://snapshots.elastic.co/downloads/apm-server/apm-server-$(ELASTIC_VERSION)-SNAPSHOT-linux-x86_64.tar.gz && \
 	wget https://snapshots.elastic.co/downloads/apm-server/apm-server-oss-$(ELASTIC_VERSION)-SNAPSHOT-linux-x86_64.tar.gz); \
 	ARTIFACTS_DIR=$$PWD/snapshots make release-manager-snapshot
