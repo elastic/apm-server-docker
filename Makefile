@@ -31,6 +31,11 @@ test: templates lint
 	)
 .PHONY: test
 
+# Test a snapshot image, which requires modifying the ELASTIC_VERSION to find the right images.
+test-snapshot:
+	ELASTIC_VERSION=$(ELASTIC_VERSION)-SNAPSHOT make test
+
+
 lint: venv
 	flake8 tests/
 .PHONY: lint
