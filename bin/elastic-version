@@ -21,6 +21,7 @@ def qualify(version):
         return "-".join([version, qualifier])
     return version
 
+
 def get_version():
     version = os.getenv('ELASTIC_VERSION')
     if version:
