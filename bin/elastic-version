@@ -15,7 +15,7 @@ def get_hard_coded_version():
 
 
 def qualify(version):
-    qualifier = os.getenv('BEAT_VERSION_QUALIFIER')
+    qualifier = os.getenv('VERSION_QUALIFIER')
     if qualifier:
         # ignore None or ''
         return "-".join([version, qualifier])
