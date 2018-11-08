@@ -32,7 +32,7 @@ RUN mkdir data logs && \
 # Remove the suid bit everywhere it is set to mitigate against stackclash
 RUN find / -xdev -perm -4000 -exec chmod u-s {} +
 
-USER apm-server
+USER 1000
 
 EXPOSE 8200
 
