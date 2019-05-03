@@ -1,0 +1,5 @@
+---
+- job:
+    name: apm-server/apm-server-docker-mbp
+    display-name: APM Server Docker image
+    description: Official APM Server Docker image from Elastic.
